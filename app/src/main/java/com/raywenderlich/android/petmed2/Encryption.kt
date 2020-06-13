@@ -60,6 +60,7 @@ internal class Encryption {
     val pbKeySpec = PBEKeySpec(password, salt, 1324, 256) // 1
     val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1") // 2
     val keyBytes = secretKeyFactory.generateSecret(pbKeySpec).encoded // 3
+    val keySpec = SecretKeySpec(keyBytes, "AES") // 4
     
     return map
   }
