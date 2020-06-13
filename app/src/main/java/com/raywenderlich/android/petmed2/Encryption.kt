@@ -68,6 +68,10 @@ internal class Encryption {
     ivRandom.nextBytes(iv)
     val ivSpec = IvParameterSpec(iv) // 2
 
+    val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding") // 1
+    cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
+    val encrypted = cipher.doFinal(dataToEncrypt) // 2
+
     return map
   }
 
