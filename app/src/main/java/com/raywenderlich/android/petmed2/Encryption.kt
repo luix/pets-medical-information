@@ -58,7 +58,8 @@ internal class Encryption {
     random.nextBytes(salt)
 
     val pbKeySpec = PBEKeySpec(password, salt, 1324, 256) // 1
-
+    val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1") // 2
+    
     return map
   }
 
