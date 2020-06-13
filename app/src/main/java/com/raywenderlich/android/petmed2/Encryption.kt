@@ -96,6 +96,13 @@ internal class Encryption {
     val keyBytes = secretKeyFactory.generateSecret(pbKeySpec).encoded
     val keySpec = SecretKeySpec(keyBytes, "AES")
 
+    // 3
+    //Decrypt
+    val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+    val ivSpec = IvParameterSpec(iv)
+    cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
+    decrypted = cipher.doFinal(encrypted)
+
     return decrypted
   }
 
@@ -104,6 +111,26 @@ internal class Encryption {
     val map = HashMap<String, ByteArray>()
 
     //TODO: Add code here
+    // 1
+    //Get the key
+    val keyStore = KeyStore.getInstance("AndroidKeyStore")
+    keyStore.load(null)
+
+    val secretKeyEntry =
+            keyStore.getEntry("MyKeyAlias", null) as KeyStore.SecretKeyEntry
+    val secretKey = secretKeyEntry.secretKey
+
+    // 2
+    //Encrypt data
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+    val ivBytes = cipher.iv
+    val encryptedBytes = cipher.doFinal(dataToEncrypt)
+
+    // 3
+    map["iv"] = ivBytes
+    map["encrypted"] = encryptedBytes
+
 
     return map
   }
@@ -113,6 +140,27 @@ internal class Encryption {
     var decrypted: ByteArray? = null
 
     //TODO: Add code here
+    // 1
+    //Get the key
+    val keyStore = KeyStore.getInstance("AndroidKeyStore")
+    keyStore.load(null)
+
+    val secretKeyEntry =
+            keyStore.getEntry("MyKeyAlias", null) as KeyStore.SecretKeyEntry
+    val secretKey = secretKeyEntry.secretKey
+
+    // 2
+    //Extract info from map
+    val encryptedBytes = map["encrypted"]
+    val ivBytes = map["iv"]
+
+    // 3
+    //Decrypt data
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    val spec = GCMParameterSpec(128, ivBytes)
+    cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
+    decrypted = cipher.doFinal(encryptedBytes)
+
 
     return decrypted
   }
@@ -121,7 +169,26 @@ internal class Encryption {
   fun keystoreTest() {
 
     //TODO: Add code here
+    val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore") // 1
+    val keyGenParameterSpec = KeyGenParameterSpec.Builder("MyKeyAlias",
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            //.setUserAuthenticationRequired(true) // 2 requires lock screen, invalidated if lock screen is disabled
+            //.setUserAuthenticationValidityDurationSeconds(120) // 3 only available x seconds from password authentication. -1 requires finger print - every time
+            .setRandomizedEncryptionRequired(true) // 4 different ciphertext for same plaintext on each call
+            .build()
+    keyGenerator.init(keyGenParameterSpec)
+    keyGenerator.generateKey()
 
+    // 1
+    val map = keystoreEncrypt("My very sensitive string!".toByteArray(Charsets.UTF_8))
+    // 2
+    val decryptedBytes = keystoreDecrypt(map)
+    decryptedBytes?.let {
+      val decryptedString = String(it, Charsets.UTF_8)
+      Log.e("MyApp", "The decrypted string is: $decryptedString")
+    }
   }
 }
 

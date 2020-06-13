@@ -33,6 +33,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Base64.*
 import android.view.View
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.toast
@@ -112,13 +113,43 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  private fun lastLoggedIn(): String? {
+  private fun lastLoggedInOld(): String? {
     //Retrieve shared prefs data
     val preferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)  // Context.MODE_WORLD_WRITEABLE
     return preferences.getString("l", "")
   }
 
-  private fun saveLastLoggedInTime() {
+  private fun lastLoggedIn(): String? {
+    //Get password
+    val password = CharArray(login_password.length())
+    login_password.text.getChars(0, login_password.length(), password, 0)
+
+    //Retrieve shared prefs data
+    // 1
+    val preferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val base64Encrypted = preferences.getString("l", "")
+    val base64Salt = preferences.getString("lsalt", "")
+    val base64Iv = preferences.getString("liv", "")
+
+    //Base64 decode
+    // 2
+    val encrypted = Base64.decode(base64Encrypted, Base64.NO_WRAP)
+    val iv = Base64.decode(base64Iv, Base64.NO_WRAP)
+    val salt = Base64.decode(base64Salt, Base64.NO_WRAP)
+
+    //Decrypt
+    // 3
+    val decrypted = Encryption().decrypt(
+            hashMapOf("iv" to iv, "salt" to salt, "encrypted" to encrypted), password)
+
+    var lastLoggedIn: String? = null
+    decrypted?.let {
+      lastLoggedIn = String(it, Charsets.UTF_8)
+    }
+    return lastLoggedIn
+  }
+
+  private fun saveLastLoggedInTimeOld() {
     val currentDateTimeString = DateFormat.getDateTimeInstance().format(Date())
 
     //Save to shared prefs
@@ -127,8 +158,32 @@ class MainActivity : AppCompatActivity() {
     editor.apply()
   }
 
+  private fun saveLastLoggedInTime() {
+    //Get password
+    val password = CharArray(login_password.length())
+    login_password.text.getChars(0, login_password.length(), password, 0)
+
+    // Base64 the data
+    val currentDateTimeString = DateFormat.getDateTimeInstance().format(Date())
+    // 1
+    val map =
+            Encryption().encrypt(currentDateTimeString.toByteArray(Charsets.UTF_8), password)
+    // 2
+    val valueBase64String = Base64.encodeToString(map["encrypted"], Base64.NO_WRAP)
+    val saltBase64String = Base64.encodeToString(map["salt"], Base64.NO_WRAP)
+    val ivBase64String = Base64.encodeToString(map["iv"], Base64.NO_WRAP)
+
+    //Save to shared prefs
+    val editor = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit()
+    // 3
+    editor.putString("l", valueBase64String)
+    editor.putString("lsalt", saltBase64String)
+    editor.putString("liv", ivBase64String)
+    editor.apply()
+  }
+
   //This is just for demo data
-  private fun createDataSource(filename: String, outFile: File) {
+  private fun createDataSourceDemo(filename: String, outFile: File) {
     val fileDescriptor = applicationContext.assets.openFd(filename)
     fileDescriptor.createInputStream().use { inputStream ->
       FileOutputStream(outFile).use { outputStream ->
@@ -136,6 +191,19 @@ class MainActivity : AppCompatActivity() {
             fileDescriptor.length,
             outputStream.channel)
       }
+    }
+  }
+
+  private fun createDataSource(filename: String, outFile: File) {
+    val inputStream = applicationContext.assets.open(filename)
+    val bytes = inputStream.readBytes()
+    inputStream.close()
+
+    val password = CharArray(login_password.length())
+    login_password.text.getChars(0, login_password.length(), password, 0)
+    val map = Encryption().encrypt(bytes, password)
+    ObjectOutputStream(FileOutputStream(outFile)).use {
+      it -> it.writeObject(map)
     }
   }
 
