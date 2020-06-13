@@ -72,6 +72,10 @@ internal class Encryption {
     cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
     val encrypted = cipher.doFinal(dataToEncrypt) // 2
 
+    map["salt"] = salt
+    map["iv"] = iv
+    map["encrypted"] = encrypted
+
     return map
   }
 
