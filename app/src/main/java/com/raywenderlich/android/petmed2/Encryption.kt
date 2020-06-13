@@ -89,6 +89,13 @@ internal class Encryption {
     val iv = map["iv"]
     val encrypted = map["encrypted"]
 
+    // 2
+    //regenerate key from password
+    val pbKeySpec = PBEKeySpec(password, salt, 1324, 256)
+    val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+    val keyBytes = secretKeyFactory.generateSecret(pbKeySpec).encoded
+    val keySpec = SecretKeySpec(keyBytes, "AES")
+
     return decrypted
   }
 
