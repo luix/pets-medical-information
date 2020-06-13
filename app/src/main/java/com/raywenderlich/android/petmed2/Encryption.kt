@@ -84,6 +84,10 @@ internal class Encryption {
     var decrypted: ByteArray? = null
 
     //TODO: Add code here
+    // 1
+    val salt = map["salt"]
+    val iv = map["iv"]
+    val encrypted = map["encrypted"]
 
     return decrypted
   }
