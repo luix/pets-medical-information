@@ -53,6 +53,9 @@ internal class Encryption {
     val map = HashMap<String, ByteArray>()
 
     //TODO: Add code here
+    val random = SecureRandom()
+    val salt = ByteArray(256)
+    random.nextBytes(salt)
 
     return map
   }
