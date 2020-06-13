@@ -57,6 +57,8 @@ internal class Encryption {
     val salt = ByteArray(256)
     random.nextBytes(salt)
 
+    val pbKeySpec = PBEKeySpec(password, salt, 1324, 256) // 1
+
     return map
   }
 
