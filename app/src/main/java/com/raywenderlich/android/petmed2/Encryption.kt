@@ -65,6 +65,8 @@ internal class Encryption {
     val ivRandom = SecureRandom() //not caching previous seeded instance of SecureRandom
     // 1
     val iv = ByteArray(16)
+    ivRandom.nextBytes(iv)
+    val ivSpec = IvParameterSpec(iv) // 2
 
     return map
   }
