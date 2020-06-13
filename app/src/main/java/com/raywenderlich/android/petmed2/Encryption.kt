@@ -61,7 +61,11 @@ internal class Encryption {
     val secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1") // 2
     val keyBytes = secretKeyFactory.generateSecret(pbKeySpec).encoded // 3
     val keySpec = SecretKeySpec(keyBytes, "AES") // 4
-    
+
+    val ivRandom = SecureRandom() //not caching previous seeded instance of SecureRandom
+    // 1
+    val iv = ByteArray(16)
+
     return map
   }
 
